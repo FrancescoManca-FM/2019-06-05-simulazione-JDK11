@@ -5,8 +5,11 @@
 package it.polito.tdp.crimes;
 
 import java.net.URL;
+import java.util.List;
 import java.util.ResourceBundle;
 
+import it.polito.tdp.crimes.model.District;
+import it.polito.tdp.crimes.model.DistrictPeso;
 import it.polito.tdp.crimes.model.Model;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
@@ -25,13 +28,13 @@ public class FXMLController {
     private URL location;
 
     @FXML // fx:id="boxAnno"
-    private ComboBox<?> boxAnno; // Value injected by FXMLLoader
+    private ComboBox<Integer> boxAnno; // Value injected by FXMLLoader
 
     @FXML // fx:id="boxMese"
-    private ComboBox<?> boxMese; // Value injected by FXMLLoader
+    private ComboBox<Integer> boxMese; // Value injected by FXMLLoader
 
     @FXML // fx:id="boxGiorno"
-    private ComboBox<?> boxGiorno; // Value injected by FXMLLoader
+    private ComboBox<Integer> boxGiorno; // Value injected by FXMLLoader
 
     @FXML // fx:id="btnCreaReteCittadina"
     private Button btnCreaReteCittadina; // Value injected by FXMLLoader
@@ -47,12 +50,39 @@ public class FXMLController {
 
     @FXML
     void doCreaReteCittadina(ActionEvent event) {
-
+    	txtResult.clear();
+    	int anno = 0;
+    	try {
+    		anno = this.boxAnno.getValue();
+    	}catch(NumberFormatException nfe) {
+    		nfe.printStackTrace();
+    		throw new RuntimeException("Errore inserimento anno");
+    	}
+    	this.model.creaGrafo(anno);
+    	txtResult.appendText("GRAFO CREATO!\n NUMERO VERTICI: "+this.model.verticiSize()+"\n NUMERO ARCHI: "+this.model.archiSize()+"\n");
+    	
+    	for(District d : this.model.getVertici()) {
+    		txtResult.appendText("DISTRETTO: "+d.getId()+"\nVICINI: \n");
+    		List<DistrictPeso> vicini = this.model.getDistrettiPerPeso(d);
+    		for(DistrictPeso dp : vicini) {
+    			txtResult.appendText(dp.getD2().getId()+",  DISTANZA: "+dp.getDistanza()+"\n");
+    		}
+    	}
+    	boxMese.getItems().addAll(this.model.getMesi());
+    	boxGiorno.getItems().addAll(this.model.getGiorni());
     }
 
     @FXML
     void doSimula(ActionEvent event) {
-
+    	txtResult.clear();
+    	if(boxAnno.getValue()==null || boxMese.getValue()==null || boxGiorno.getValue()==null) {
+    		txtResult.appendText("Devi selezionare anno mese e giorno");
+    		return;
+    	}
+    	this.model.initSim(boxAnno.getValue(), boxMese.getValue(), boxGiorno.getValue(), Integer.parseInt(txtN.getText()));
+    	this.model.runSim();
+    	txtResult.appendText("SIMULAZIONE EFFETTUATA\n NUMERO CRIMINI MAL GESTITI: "+this.model.getCriminiMalGestiti()+"\n NUMERO CRIMINI TOTALI: "+this.model.getCrimini());
+    	
     }
 
     @FXML // This method is called by the FXMLLoader when initialization is complete
@@ -69,5 +99,7 @@ public class FXMLController {
     
     public void setModel(Model model) {
     	this.model = model;
+    	List<Integer> anni = this.model.getAnni();
+    	this.boxAnno.getItems().addAll(anni);
     }
 }
